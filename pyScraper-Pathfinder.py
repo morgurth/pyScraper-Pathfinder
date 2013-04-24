@@ -28,69 +28,67 @@ def write_weapons(weapons_table):
     f.write("WEAPONS\n")
     f.write("Name;Cost;Damage;Critical;Range;Weight;Type;Special\n")
 
-    f.write(weapons_table[0] + ";" + weapons_table[1] + "\n")
+    for count in range(0,len(weapons_table)):
+        if count%2==0:
+           f.write(weapons_table[count][0] + ';' + weapons_table[count][1] + '\n')
+        else:
+           for result in weapons_table[count]:
+               f.write(result[0] + ';' + result[1] + ';' + result[3] + ';' + result[4] + ';' + result[5] + ';' + result[6] + ';' + result[7] + '\n')
 
-    newrow = False
-
-    for count in range(11,len(weapons_table)):
-        if not newrow:
-            f.write(weapons_table[count] + ";")
-  
     f.close
     
     print "[\033[92m OK \033[0m]"
     return
 
-html = urllib2.urlopen('http://www.d20pfsrd.com/equipment---final/weapons')
-pagesource = html.read()
+def weapons_parse(source): 
+    html = urllib2.urlopen(source)
+    pagesource = html.read()
 
-soup = BeautifulSoup(pagesource)
+    soup = BeautifulSoup(pagesource)
 
-alltables = soup.findAll( "table", { "style":"border-color:rgb(136,136,136);border-width:1px;border-collapse:collapse;margin:5px 0px;width:100%" } )
+    alltables = soup.findAll( "table", { "style":"border-color:rgb(136,136,136);border-width:1px;border-collapse:collapse;margin:5px 0px;width:100%" } )
 
-results = []
+    results = []
 
-for table in alltables:
-    rows = table.findChildren(['th', 'tr'])
-    weapon_line = []
-    weapon_list = []
-    header_line = []
-    header_list = []
+    for table in alltables:
+        rows = table.findChildren(['th', 'tr'])
+        weapon_line = []
+        weapon_list = []
+        header_line = []
+        header_list = []
 
-    for th in rows:
-        header = th.findChildren('th')
+        for th in rows:
+            header = th.findChildren('th')
 
-        for th in header:
-            text = th.renderContents().strip('\n')
-            text = strip_tags(text)
-            text = text.translate(None, '12')
-            header_line.append(text)
+            for th in header:
+                text = th.renderContents().strip('\n')
+                text = strip_tags(text)
+                text = text.translate(None, '12')
+                header_line.append(text)
 
-    header_list = ';'.join(header_line)
-    header_list = re.split(';|\n', header_list)
-    header_list[0] = header_list[0].translate(None, '()')
-    
-    results.append(header_list)
+        header_list = ';'.join(header_line)
+        header_list = re.split(';|\n', header_list)
+        header_list[0] = header_list[0].translate(None, '()')
 
-    for tr in rows:
-        cols = tr.findAll('td')
-        for td in cols:
-            text = td.renderContents().strip('\n')
-            text = strip_tags(text)
-            weapon_line.append(text)
+        results.append(header_list)
 
-    weapon_list = ';'.join(weapon_line)
-    weapon_list = weapon_list.split(';')
-    items, chunk = weapon_list, 10
-    temp_weapon_table = zip(*[iter(items)]*chunk)
+        for tr in rows:
+            cols = tr.findAll('td')
+            for td in cols:
+                text = td.renderContents().strip('\n')
+                text = strip_tags(text.lstrip())
+                weapon_line.append(text)
 
-    results.append(temp_weapon_table)
+        weapon_list = ';'.join(weapon_line)
+        weapon_list = weapon_list.split(';')
 
-for result in results:
-    print(result)
+        items, chunk = weapon_list, 10
+        temp_weapon_table = zip(*[iter(items)]*chunk)
 
-#result_list = results[0].split('\n')
+        results.append(temp_weapon_table)
 
-#result_list[0] = strip_tags(result_list[0].translate(None, '()')) 
+    return results
 
-#write_weapons(result_list)
+weapon_result_list = weapons_parse('http://www.d20pfsrd.com/equipment---final/weapons')
+
+write_weapons(weapon_result_list)
